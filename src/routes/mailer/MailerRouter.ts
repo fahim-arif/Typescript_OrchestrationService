@@ -1,9 +1,12 @@
 import express, {NextFunction, Request, Response} from 'express';
 import MailerService from '@services/mailer/MailerService';
-import {SubscriberCreate, SubscriberGet} from '@root/models/mailer/Mailer';
+import {SubscriberCreate, SubscriberGet} from '@models/Mailer';
+import { validate } from 'express-validation';
+import { mailerValidation } from '@models/validations/Mailer';
 
 export default class MailerRouter {
   public router = express.Router();
+  public path = '/subscribers';
   private mailerService : MailerService;
 
   private getSubscribers = async (req: Request, res: Response, next: NextFunction) => {
@@ -35,15 +38,15 @@ export default class MailerRouter {
     }
   };
 
-  constructor() {
+  constructor(mailerService: MailerService) {
     this.initializeRoutes();
-    this.mailerService = new MailerService();
+    this.mailerService = mailerService;
   }
 
   initializeRoutes() {
     this.router.get('/', this.getSubscribers);
     this.router.get('/:id', this.getSubscriberById);
-    this.router.post('/', this.createSubscriber);
+    this.router.post('/', validate(mailerValidation, {}, {}), this.createSubscriber);
   }
 
 }

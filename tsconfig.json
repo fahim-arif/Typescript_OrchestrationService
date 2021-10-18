@@ -21,6 +21,7 @@
       "@routes/*": ["routes/*"],
       "@services/*": ["services/*"], 
       "@utils/*": ["utils/*"],        
+      "@tests/*": ["tests/*"],     
     }
   },
   "lib": ["es2015"],
