@@ -1,4 +1,4 @@
-import {SubscriberCreate, SubscriberGet} from '@models/mailer/Mailer';
+import {SubscriberCreate, SubscriberGet} from '@models/Mailer';
 import {SubscriberStatus} from '@prisma/client';
 import prisma from '@repositories/prisma/PrismaClient';
 import {logger} from '@middlewares/log/Logger';

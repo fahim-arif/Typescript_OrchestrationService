@@ -1,11 +1,12 @@
-import {SubscriberCreate, SubscriberGet} from '@models/mailer/Mailer';
+import {SubscriberCreate, SubscriberGet} from '@models/Mailer';
 import MailerRepository from '@repositories/mailer/MailerRepository';
+import {InternalError, NotFound} from '@utils/HttpException';
 
 export default class MailerService {
   private mailerRepository: MailerRepository;
 
-  constructor() {
-    this.mailerRepository = new MailerRepository();
+  constructor(mailerRepository: MailerRepository) {
+    this.mailerRepository = mailerRepository;
   }
 
   async getSubscribers() : Promise<SubscriberGet[]> {
@@ -13,7 +14,7 @@ export default class MailerService {
       const subscribers = this.mailerRepository.findAll();
       return subscribers;
     } catch (error) {
-      throw new Error(error.message);
+      throw new InternalError(error.message);
     }
   }
 
@@ -22,9 +23,12 @@ export default class MailerService {
       const subscriber = this.mailerRepository.findById(id);
       return subscriber;
     } catch (error) {
-      throw new Error(error.message);
+      if (error instanceof NotFound) {
+        throw error;
+      } else {
+        throw new InternalError(error.message);
+      }
     }
-
   }
 
   async createSubscriber(subscriberCreate: SubscriberCreate) : Promise<SubscriberGet> {
@@ -32,7 +36,7 @@ export default class MailerService {
       const subscriber = this.mailerRepository.create(subscriberCreate);
       return subscriber;
     } catch (error) {
-      throw new Error(error.message);
+      throw new InternalError(error.message);
     }
   }
 }
