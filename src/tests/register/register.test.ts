@@ -1,62 +1,63 @@
-import { AccountCreate, AccountGet } from "@root/models/Account";
-import { UserCreate, UserGet } from "@root/models/User";
-import {createUser, createAccount } from '@services/register/registerhelper'
+import {AccountCreate, AccountGet} from '@models/Account';
+import {UserCreate, UserGet} from '@models/User';
+import RegisterHelper from '@services/register/RegisterHelper';
 
-var axios = require('axios').default;
+const axios = require('axios').default;
 
-jest.mock("axios");
+jest.mock('axios');
 
 describe('register', () => {
 
-  it("creates new user", async () => {
-  
+  it('creates new user', async () => {
+
     const user: UserCreate = {
-      name: "John",
-      email: "john@example.com",
-      password: "aA2@abcabc",
+      name: 'John',
+      email: 'john@example.com',
+      password: 'aA2@abcabc',
     };
-  
+
     const responseData: UserGet = {
-      id: "random-user-id",
-      name: "John",
-      email: "john@example.com",
-      password: "aA2@abcabc",
+      id: 'random-user-id',
+      name: 'John',
+      email: 'john@example.com',
+      password: 'aA2@abcabc',
     };
-    
-    axios.post.mockResolvedValue({ data: responseData });
+
+    axios.post.mockResolvedValue({data: responseData});
     // axios.post.mockImplementation(() => { return { data: responseData }});
-  
-    const userGet: UserGet = await createUser(user);
-  
+
+    const registerHelper = new RegisterHelper();
+    const userGet: UserGet = await registerHelper.createUser(user);
+
     expect(userGet).toEqual(responseData);
-    expect(userGet.id).toEqual("random-user-id");
+    expect(userGet.id).toEqual('random-user-id');
   });
 
 
-  it("creates new account", async () => {
-  
+  it('creates new account', async () => {
+
     const account: AccountCreate = {
-      email: "john@example.com",
-      company_name: "Apple",
-      handle: "apple"
+      email: 'john@example.com',
+      company_name: 'Apple',
+      handle: 'apple',
     };
-  
+
     const responseData: AccountGet = {
-      id: "random-user-id",
-      email: "john@example.com",
-      company_name: "Apple",
-      handle: "apple"
+      id: 'random-user-id',
+      email: 'john@example.com',
+      company_name: 'Apple',
+      handle: 'apple',
     };
-    
-    axios.post.mockResolvedValue({ data: responseData });
-  
-    const accountGet: AccountGet = await createAccount(account);
-  
+
+    axios.post.mockResolvedValue({data: responseData});
+
+    const registerHelper = new RegisterHelper();
+    const accountGet: AccountGet = await registerHelper.createAccount(account);
+
     expect(accountGet).toEqual(responseData);
-    expect(accountGet.id).toEqual("random-user-id");
+    expect(accountGet.id).toEqual('random-user-id');
   });
 
-})
-
+});
 
 

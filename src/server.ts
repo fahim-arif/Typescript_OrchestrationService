@@ -4,7 +4,7 @@ import {logger} from '@middlewares/log/Logger';
 import MailerRouter from '@routes/mailer/MailerRouter';
 import MailerService from '@services/mailer/MailerService';
 import MailerRepository from '@repositories/mailer/MailerRepository';
-import RegisterRouter from './routes/register/RegisterRouter';
+import RegisterRouter from '@routes/register/RegisterRouter';
 import RegisterService from '@services/register/RegisterService';
 
 
