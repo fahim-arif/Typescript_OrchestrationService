@@ -1,7 +1,6 @@
 import {AxiosInstance, AxiosRequestConfig, AxiosResponse} from 'axios';
 import slugify from 'slugify';
 import {logger} from '@middlewares/log/Logger';
-import {InternalError} from '@utils/HttpException';
 import {UserCreate, UserGet} from '@models/User';
 import {AccountCreate, AccountGet, PaginatedAccountList} from '@models/Account';
 import auth0Helper from '@middlewares/auth/Auth0Helper';
@@ -26,7 +25,7 @@ export default class RegisterHelper {
           'cache-control': 'no-cache',
         },
         data: {
-          user,
+          ...user,
         },
       };
 
@@ -34,8 +33,9 @@ export default class RegisterHelper {
       const userGet: UserGet = response.data;
       return userGet;
     } catch (error) {
-      logger.error('user creation failed');
-      throw new InternalError(error.message);
+      logger.error('User Creation Failed.');
+      logger.error(error);
+      throw error;
     }
   };
 
@@ -51,7 +51,7 @@ export default class RegisterHelper {
           'cache-control': 'no-cache',
         },
         data: {
-          account,
+          ...account,
         },
       };
 
@@ -59,8 +59,9 @@ export default class RegisterHelper {
       const accountGet: AccountGet = response.data;
       return accountGet;
     } catch (error) {
-      logger.error('account creation failed');
-      throw new InternalError(error.message);
+      logger.error('Account Creation Failed');
+      logger.error(error);
+      throw error;
     }
   };
 
@@ -69,21 +70,35 @@ export default class RegisterHelper {
 
       const token = await auth0Helper.getTokenForApi(this.accountSvcAudience);
 
-      const options: AxiosRequestConfig = {
-        method: 'PUT',
+      // Get Etag first for PUT
+      const headOptions: AxiosRequestConfig = {
+        method: 'HEAD',
         url: `/account-users/${accountId}`,
         headers: {
           authorization: `Bearer ${token}`,
           'cache-control': 'no-cache',
         },
+      };
+
+      const headResponse = await this.axiosInstance.request(headOptions);
+      const etag = headResponse.headers.etag;
+
+      const options: AxiosRequestConfig = {
+        method: 'PUT',
+        url: `/account-users/${accountId}`,
+        headers: {
+          authorization: `Bearer ${token}`,
+          'if-match': etag,
+        },
         data: {
-          users: [{id: userId}],
+          users: [{user_id: userId}],
         },
       };
       await this.axiosInstance.request(options);
     } catch (error) {
-      logger.error('adding user to account failed');
-      throw new InternalError(error.message);
+      logger.error('Adding User to Account Failed');
+      logger.error(error);
+      throw error;
     }
   };
 
@@ -180,8 +195,9 @@ export default class RegisterHelper {
         }
       }
     } catch (error) {
-      logger.error('creating handle failed');
-      throw new InternalError(error.message);
+      logger.error('Creating Handle Failed');
+      logger.error(error);
+      throw error;
     }
   };
 

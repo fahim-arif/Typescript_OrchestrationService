@@ -37,6 +37,7 @@ export default class RegisterService {
 
     } catch (error) {
       logger.error(`Registration of user with email ${registerCreate.email} and name ${registerCreate.name} failed. Please take steps to clean the data if needed.`);
+      logger.error(error);
       throw new InternalError(error.message);
     }
   }

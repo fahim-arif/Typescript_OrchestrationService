@@ -1,5 +1,6 @@
 import * as dotenv from 'dotenv';
 import winston from 'winston';
+import {getFlowId} from '@middlewares/log/LocalStore';
 
 dotenv.config();
 
@@ -40,9 +41,9 @@ const format = winston.format.combine(
     winston.format.printf(
       (info) => {
         if (info.stack) {
-          return `${info.timestamp} [${info.level}]:  ${info.message} - ${info.stack}`;
+          return `${info.timestamp} [${info.level}]: [${getFlowId()}]  ${info.message} - ${info.stack}`;
         }
-        return `${info.timestamp} [${info.level}]:  ${info.message}`;
+        return `${info.timestamp} [${info.level}]: [${getFlowId()}] ${info.message}`;
       },
     ),
   );
