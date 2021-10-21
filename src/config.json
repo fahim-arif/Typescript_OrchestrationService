@@ -1,0 +1,6 @@
+{
+  "uniqueHandleRequestLimit": 10,
+  "handleSuffixMin": 1,
+  "handleSuffixMax": 1000,
+  "commonWords": ["company", "companies", "corporation", "corp", "corp.", "inc.", "service", "services"]
+}

@@ -5,7 +5,9 @@ import {UserCreate, UserGet} from '@models/User';
 import {AccountCreate, AccountGet, PaginatedAccountList} from '@models/Account';
 import auth0Helper from '@middlewares/auth/Auth0Helper';
 import {api} from '@utils/Api';
+import {InternalError} from '@utils/HttpException';
 
+import config from '../../config.json';
 
 export default class RegisterHelper {
 
@@ -105,13 +107,10 @@ export default class RegisterHelper {
   generateHandle = (company_name: string, maxLength: number) => {
     let handle = company_name;
 
-    // DOTO: move this to config
-    const commonWords = ['company', 'companies', 'corporation', 'corp', 'corp.', 'inc.', 'service', 'services'];
-
     handle = handle.trim();
 
     // remove commonWords from company_name
-    commonWords.forEach((word) => {
+    config.commonWords.forEach((word) => {
       const re = new RegExp(word, 'gi');
       handle = handle.replace(re, '');
     });
@@ -152,48 +151,41 @@ export default class RegisterHelper {
 
   createUniqueHandle = async (company_name: string) => {
 
-    let accounts; let index;
-    let count = 0;
+    const token = await auth0Helper.getTokenForApi(this.accountSvcAudience);
 
     let handle = this.generateHandle(company_name, 25);
 
-    const token = await auth0Helper.getTokenForApi(this.accountSvcAudience);
-
-    const options: AxiosRequestConfig = {
-      method: 'GET',
-      url: '/accounts',
-      headers: {
-        authorization: `Bearer ${token}`,
-        'cache-control': 'no-cache',
-      },
-      params: {
-        query: {
-          handle,
-        },
-      },
-    };
-
-    // update handle till handle is unique
     try {
-      // DOTO: We should change this, probably run it to configurable limit
-      while (true) {
+      for (let i = 1; i <= config.uniqueHandleRequestLimit; i++) {
+
+        const options: AxiosRequestConfig = {
+          method: 'GET',
+          url: '/accounts',
+          headers: {
+            authorization: `Bearer ${token}`,
+            'cache-control': 'no-cache',
+          },
+          params: {
+            query: {
+              handle,
+            },
+          },
+        };
+
         const response: AxiosResponse<PaginatedAccountList> = await this.axiosInstance.request(options);
 
-        accounts = response.data.accounts;
+        const accounts = response.data.accounts;
 
         if (accounts.length === 0) {
           return handle;
         } else {
-          count += 1;
-          if (count === 1) {
-            handle += '-1';
-          } else {
-            index = handle.lastIndexOf('-');
-            handle = handle.substr(0, index);
-            handle += `-${count}`;
-          }
+          handle += `-${Math.floor(Math.random() * config.handleSuffixMax) + config.handleSuffixMin}`;
         }
       }
+
+      logger.error('Could not generate unique Handle.');
+      throw new InternalError();
+
     } catch (error) {
       logger.error('Creating Handle Failed');
       logger.error(error);
