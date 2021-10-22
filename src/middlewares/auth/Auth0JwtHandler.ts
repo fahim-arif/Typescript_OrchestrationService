@@ -1,6 +1,6 @@
-import jwt from "express-jwt";
-import jwksRsa from "jwks-rsa";
-import * as dotenv from "dotenv";
+import jwt from 'express-jwt';
+import jwksRsa from 'jwks-rsa';
+import * as dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -17,5 +17,5 @@ export const checkAuth0Jwt = jwt({
   // Validate the audience and the issuer.
   audience: process.env.AUTH0_AUDIENCE,
   issuer: `${process.env.AUTH0_ISSUER}`,
-  algorithms: ["RS256"],
+  algorithms: ['RS256'],
 });

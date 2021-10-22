@@ -2,6 +2,7 @@ export interface UserCreate {
   name: string;
   email: string;
   password: string;
+  receive_notifications: boolean;
 }
 
 export interface UserGet extends UserCreate {

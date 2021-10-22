@@ -4,12 +4,12 @@ import 'module-alias/register';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { notFoundHandler } from '@middlewares/error/NotFoundHandler';
-import { httpErrorHandler } from '@middlewares/error/HttpErrorHandler';
+import {notFoundHandler} from '@middlewares/error/NotFoundHandler';
+import {httpErrorHandler} from '@middlewares/error/HttpErrorHandler';
 import morganMiddleware from '@middlewares/log/Morgan';
-import { mdcMiddleware } from '@middlewares/log/LocalStore';
-import { logger } from '@middlewares/log/Logger';
-import { preconditionOptions } from '@middlewares/error/Precondition';
+import {mdcMiddleware} from '@middlewares/log/LocalStore';
+import {logger} from '@middlewares/log/Logger';
+import {preconditionOptions} from '@middlewares/error/Precondition';
 import preconditions from 'express-preconditions-addl';
 
 dotenv.config();

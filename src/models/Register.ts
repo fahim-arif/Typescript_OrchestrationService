@@ -3,6 +3,6 @@ export interface RegisterCreate {
   company_name: string;
   email: string;
   password: string;
-  notify: boolean;
+  receive_notifications: boolean;
 }
 
