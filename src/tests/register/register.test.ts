@@ -14,6 +14,7 @@ describe('register', () => {
       name: 'John',
       email: 'john@example.com',
       password: 'aA2@abcabc',
+      receive_notifications: true,
     };
 
     const responseData: UserGet = {
@@ -21,6 +22,7 @@ describe('register', () => {
       name: 'John',
       email: 'john@example.com',
       password: 'aA2@abcabc',
+      receive_notifications: true,
     };
 
     axios.post.mockResolvedValue({data: responseData});

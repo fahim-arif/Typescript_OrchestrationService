@@ -19,6 +19,7 @@ export default class RegisterService {
         name: registerCreate.name,
         email: registerCreate.email,
         password: registerCreate.password,
+        receive_notifications: registerCreate.receive_notifications,
       };
 
       const {id: userId} = await this.registerHelper.createUser(user);
