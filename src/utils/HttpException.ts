@@ -54,6 +54,12 @@ export class PreconditionRequired extends HttpException {
   }
 }
 
+export class RequestLimitExceeded extends HttpException {
+  constructor(description?: string) {
+    super(429, 'Too Many Requests', description);
+  }
+}
+
 export class InternalError extends HttpException {
   constructor(description?: string) {
     super(500, 'Internal Server Error', description);
