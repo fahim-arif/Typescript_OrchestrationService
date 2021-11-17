@@ -3,6 +3,7 @@ import {validate} from 'express-validation';
 import RegisterService from '@services/register/RegisterService';
 import {RegisterCreate} from '@models/Register';
 import {registerValidation} from '@models/validations/Register';
+import {checkRateLimit} from '@middlewares/RequestRateHandler';
 
 export default class RegisterRouter {
   public router = express.Router();
@@ -25,6 +26,6 @@ export default class RegisterRouter {
   }
 
   initializeRoutes() {
-    this.router.post('/', validate(registerValidation, {keyByField: true}, {abortEarly: false}), this.register);
+    this.router.post('/', checkRateLimit({windowSizeMs: 30 * 60 * 1000, maxNumberOfRequests: 5}), validate(registerValidation, {keyByField: true}, {abortEarly: false}), this.register);
   }
 }

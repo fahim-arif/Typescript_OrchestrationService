@@ -33,6 +33,7 @@
   "homepage": "https://github.com/twoMatches/gateway-api#readme",
   "dependencies": {
     "@prisma/client": "^3.2.1",
+    "@types/express-rate-limit": "^5.1.3",
     "axios": "^0.23.0",
     "axios-logger": "^2.5.0",
     "cors": "^2.8.5",
@@ -41,6 +42,7 @@
     "express-jwt": "^6.1.0",
     "express-jwt-authz": "^2.4.1",
     "express-preconditions-addl": "^1.0.2",
+    "express-rate-limit": "^5.5.0",
     "express-validation": "^3.0.8",
     "helmet": "^4.6.0",
     "jwks-rsa": "^2.0.5",
