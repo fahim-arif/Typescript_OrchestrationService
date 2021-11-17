@@ -1,9 +1,9 @@
 import {AxiosResponse} from 'axios';
 import {logger} from '@middlewares/log/Logger';
 import {api} from '@utils/Api';
-import TokenRepository from '@root/repositories/token/TokenRepository';
-import {NotFound} from '@root/utils/HttpException';
-import {Auth0Token} from '@root/models/Token';
+import TokenRepository from '@repositories/token/TokenRepository';
+import {NotFound} from '@utils/HttpException';
+import {Auth0Token} from '@models/Token';
 
 
 class Auth0Helper {
@@ -43,7 +43,7 @@ class Auth0Helper {
     }
   };
 
-  getTokenForApi = async (audience: string) => {
+  getTokenForApi = async (audience: string) : Promise<string> => {
 
     try {
     // Get Token for this Audience or api
@@ -78,13 +78,14 @@ class Auth0Helper {
 
       });
 
-      const token = response.data as Auth0Token;
-      const token_window : number = token?.expires_in || 86400;
+      tokenHolder = response.data as Auth0Token;
+      const token_window : number = tokenHolder?.expires_in || 86400;
       // Set Token expiration 60 seconds before the actual expires_in time
-      token.tokenExpirationTime = new Date().getTime() + ((token_window - 60) * 1000);
-
-      this.tokenMap.set(audience, token);
-      return token;
+      tokenHolder.tokenExpirationTime = new Date().getTime() + ((token_window - 60) * 1000);
+      // update the token in map and db
+      this.tokenMap.set(audience, tokenHolder);
+      this.updateTokenData(audience, tokenHolder);
+      return tokenHolder.access_token;
     } catch (error) {
       logger.error('Failed to get token for management endpoint');
       logger.error(error);

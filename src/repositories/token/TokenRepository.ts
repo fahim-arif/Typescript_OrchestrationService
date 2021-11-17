@@ -20,6 +20,9 @@ export default class TokenRepository {
         throw new NotFound('Resource not found');
       }
     } catch (error) {
+      if (error instanceof NotFound) {
+        throw error;
+      }
       throw new PrismaException(error.error_code, error.message, error.meta);
     }
 
@@ -30,7 +33,7 @@ export default class TokenRepository {
 
       const token_data = (auth0Token as unknown) as Prisma.JsonArray;
 
-      prisma.tokenStore.upsert({
+      await prisma.tokenStore.upsert({
         where: {
           audience,
         },
@@ -44,7 +47,7 @@ export default class TokenRepository {
       });
 
 
-      return this.findByAudience(audience);
+      return await this.findByAudience(audience);
     } catch (error) {
       throw new PrismaException(error.error_code, error.message, error.meta);
     }
