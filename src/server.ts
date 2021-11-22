@@ -6,6 +6,8 @@ import MailerService from '@services/mailer/MailerService';
 import MailerRepository from '@repositories/mailer/MailerRepository';
 import RegisterRouter from '@routes/register/RegisterRouter';
 import RegisterService from '@services/register/RegisterService';
+import UserTicketRouter from '@routes/user-tickets/UserTicketRouter';
+import UserTicketService from '@services/user-tickets/UserTicketService';
 
 
 import App from './app';
@@ -35,6 +37,7 @@ const app = new App(
   [
     new MailerRouter(new MailerService(new MailerRepository())),
     new RegisterRouter(new RegisterService()),
+    new UserTicketRouter(new UserTicketService()),
   ],
     PORT,
   );
