@@ -1,4 +1,4 @@
-import {InternalError, NotFound} from '@utils/HttpException';
+import {BadRequest, InternalError, NotFound} from '@utils/HttpException';
 import {AxiosInstance, AxiosRequestConfig, AxiosResponse} from 'axios';
 import {api} from '@utils/Api';
 import {logger} from '@middlewares/log/Logger';
@@ -47,8 +47,8 @@ export default class UserTicketService {
 
       return response;
     } catch (error) {
-      if (error instanceof NotFound) {
-        throw error;
+      if (error.response && error.response.status === 404) {
+        throw new NotFound('No user with that email exists');
       } else {
         throw new InternalError(error.message);
       }
@@ -56,10 +56,10 @@ export default class UserTicketService {
   }
 
   createForgotPasswordEmail(userTicket: UserTicketGet, email: string) {
-    const resetLink = `http://localhost:3000/reset-password?ticket=${userTicket.id}`;
+    const resetLink = `${process.env.CLIENT_HOST}/reset-password?ticket=${userTicket.id}`;
     const message = {
       to: email,
-      from: process.env.SENDGRID_EMAIL_FROM || 'rajasha1711@gmail.com',
+      from: process.env.SENDGRID_EMAIL_FROM || 'support@twomatches.xyz',
       subject: 'Reset your password for localhost',
       html: `Please click the link below to reset your password<br /><br /><a href="${resetLink}">Reset Password</a><br /><br />Or copy and paste below link:<br />${resetLink}`,
     };
@@ -84,7 +84,7 @@ export default class UserTicketService {
       const userTicket: UserTicketGet = response.data;
 
       if (!this.isValidTicket(userTicket)) {
-        throw new Error(`Ticket with id ${id} not valid`);
+        throw new BadRequest(`Ticket with id ${id} not valid`);
       }
 
       options = {
@@ -109,7 +109,9 @@ export default class UserTicketService {
 
       return ticketWithUser;
     } catch (error) {
-      if (error instanceof NotFound) {
+      if (error.response && error.response.status === 404) {
+        throw new NotFound('No such ticket exists');
+      } else if (error instanceof BadRequest) {
         throw error;
       } else {
         throw new InternalError(error.message);
@@ -135,11 +137,10 @@ export default class UserTicketService {
       };
 
       const response: AxiosResponse<UserTicketGet> = await this.axiosInstance.request(options);
-
       const userTicket: UserTicketGet = response.data;
 
       if (!this.isValidTicket(userTicket)) {
-        throw new Error(`Ticket with id ${id} not valid`);
+        throw new BadRequest(`Ticket with id ${id} not valid`);
       }
 
       // update password by PATCH to account-svc PATCH /users/
@@ -177,7 +178,7 @@ export default class UserTicketService {
 
       const message = {
         to: user.email,
-        from: process.env.SENDGRID_EMAIL_FROM || 'rajasha1711@gmail.com',
+        from: process.env.SENDGRID_EMAIL_FROM || 'support@twomatches.xyz',
         subject: 'Password updated for localhost successfully',
         html: 'Your password has been changed successfully',
       };
@@ -188,8 +189,10 @@ export default class UserTicketService {
       return ticketResponse;
 
     } catch (error) {
-      if (error instanceof NotFound) {
-        throw error;
+      if (error.response && error.response.status === 404) {
+        throw new NotFound('No such ticket exists');
+      } else if (error.response && error.response.status === 400) {
+        throw new BadRequest(error.response.data.detail);
       } else {
         throw new InternalError(error.message);
       }
@@ -209,6 +212,4 @@ export default class UserTicketService {
 
     return true;
   }
-
-
 }
