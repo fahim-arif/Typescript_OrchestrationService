@@ -1,6 +1,6 @@
 import {Joi} from 'express-validation';
 
-export const userTicketCreateValidation = {
+export const ticketCreateValidation = {
   body: Joi.object({
     email: Joi.string()
                 .email()

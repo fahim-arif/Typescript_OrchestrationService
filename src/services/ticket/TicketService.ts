@@ -1,30 +1,57 @@
-import {BadRequest, InternalError, NotFound} from '@utils/HttpException';
+import {TicketCreate, TicketGet, ResetPasswordType, TicketWithUserGet, UserTicketGet} from '@models/Ticket';
+import {logger} from '@middlewares/log/Logger';
+import {InternalError, NotFound, BadRequest} from '@utils/HttpException';
 import {AxiosInstance, AxiosRequestConfig, AxiosResponse} from 'axios';
 import {api} from '@utils/Api';
-import {logger} from '@middlewares/log/Logger';
 import auth0Helper from '@middlewares/auth/Auth0Helper';
-import {ResetPasswordType, TicketWithUserGet, UserTicketCreate, UserTicketGet} from '@root/models/UserTicket';
-import {Auth0User, UserGet} from '@root/models/User';
+import {Auth0User, UserGet} from '@models/User';
+import {EmailCreate} from '@models/Email';
 import sgMail from '@sendgrid/mail';
 
-
-export default class UserTicketService {
+export default class MailerService {
 
   private axiosInstance: AxiosInstance;
   private accountSvcAudience: string;
 
   constructor() {
-    /* global process */
+        /* global process */
     if (!process.env.ACCOUNT_SERVICE_HOST || !process.env.ACCOUNT_SERVICE_AUD) {
-      logger.error('Missing required details to initialize Account Service API');
-      throw new Error('Missing required fields to initialize Account Service API');
+      logger.error('Missing required details to initialize Register API');
+      throw new Error('Missing required fields to initialize Register API');
     }
     this.axiosInstance = api(process.env.ACCOUNT_SERVICE_HOST);
     this.accountSvcAudience = process.env.ACCOUNT_SERVICE_AUD;
     sgMail.setApiKey(process.env.SENDGRID_API_KEY || '');
   }
 
-  async createUserTicket(userTicketCreate: UserTicketCreate): Promise<AxiosResponse> {
+
+  async getTicketById(id: string) : Promise<TicketGet> {
+    try {
+      const token = await auth0Helper.getTokenForApi(this.accountSvcAudience);
+
+      const options: AxiosRequestConfig = {
+        method: 'GET',
+        url: `/user-tickets/${id}`,
+        headers: {
+          authorization: `Bearer ${token}`,
+          'cache-control': 'no-cache',
+        },
+      };
+
+      const response: AxiosResponse<TicketGet> = await this.axiosInstance.request(options);
+      const ticketGet: TicketGet = response.data;
+      return ticketGet;
+    } catch (error) {
+      logger.error(`Ticket with id ${id} not found.`);
+      if (error.response && error.response.status === 404) {
+        throw new NotFound(`Ticket with id ${id} not found`);
+      } else {
+        throw new InternalError(error.message);
+      }
+    }
+  }
+
+  async createTicket(ticketCreate: TicketCreate) : Promise<TicketGet> {
     try {
       const token = await auth0Helper.getTokenForApi(this.accountSvcAudience);
 
@@ -35,28 +62,33 @@ export default class UserTicketService {
           authorization: `Bearer ${token}`,
           'cache-control': 'no-cache',
         },
-        data: userTicketCreate,
+        data: {
+          ...ticketCreate,
+        },
       };
 
-      const response: AxiosResponse<UserTicketGet> = await this.axiosInstance.request(options);
-      const userTicket: UserTicketGet = response.data;
+      const response: AxiosResponse<TicketGet> = await this.axiosInstance.request(options);
+      const ticketGet: TicketGet = response.data;
 
-      // send reset password link email using SendGrid
-      const message = this.createForgotPasswordEmail(userTicket, userTicketCreate.email);
-      await sgMail.send(message);
+      if (ticketCreate.ticketType === 'CHANGE_PASSWORD') {
+        // send reset password link email
+        const message = this.createForgotPasswordEmail(ticketGet.id, ticketCreate.email);
+        await sgMail.send(message);
+      }
 
-      return response;
+      return ticketGet;
     } catch (error) {
+      logger.error('User ticket Creation Failed.');
       if (error.response && error.response.status === 404) {
-        throw new NotFound('No user with that email exists');
+        throw new NotFound('No user with this email exists');
       } else {
         throw new InternalError(error.message);
       }
     }
   }
 
-  createForgotPasswordEmail(userTicket: UserTicketGet, email: string) {
-    const resetLink = `${process.env.CLIENT_HOST}/reset-password?ticket=${userTicket.id}`;
+  createForgotPasswordEmail(id: string, email: string): EmailCreate {
+    const resetLink = `${process.env.CLIENT_HOST}/reset-password?ticket=${id}`;
     const message = {
       to: email,
       from: process.env.SENDGRID_EMAIL_FROM || 'support@twomatches.xyz',
@@ -81,15 +113,15 @@ export default class UserTicketService {
       };
 
       const response: AxiosResponse<UserTicketGet> = await this.axiosInstance.request(options);
-      const userTicket: UserTicketGet = response.data;
+      const userTicketGet: UserTicketGet = response.data;
 
-      if (!this.isValidTicket(userTicket)) {
+      if (!this.isValidTicket(userTicketGet)) {
         throw new BadRequest(`Ticket with id ${id} not valid`);
       }
 
       options = {
         method: 'GET',
-        url: `/users/${userTicket.user_id}`,
+        url: `/users/${userTicketGet.user_id}`,
         headers: {
           authorization: `Bearer ${token}`,
           'cache-control': 'no-cache',
@@ -100,7 +132,7 @@ export default class UserTicketService {
       const user: UserGet = userResponse.data;
 
       const ticketWithUser: TicketWithUserGet = {
-        id: userTicket.id,
+        id: userTicketGet.id,
         user: {
           name: user.name,
           email: user.email,
@@ -119,8 +151,7 @@ export default class UserTicketService {
     }
   }
 
-
-  async resetPassword(resetPasswordData: ResetPasswordType): Promise<AxiosResponse> {
+  async resetPassword(resetPasswordData: ResetPasswordType): Promise<TicketGet> {
     try {
 
       const token = await auth0Helper.getTokenForApi(this.accountSvcAudience);
@@ -137,16 +168,16 @@ export default class UserTicketService {
       };
 
       const response: AxiosResponse<UserTicketGet> = await this.axiosInstance.request(options);
-      const userTicket: UserTicketGet = response.data;
+      const userTicketGet: UserTicketGet = response.data;
 
-      if (!this.isValidTicket(userTicket)) {
+      if (!this.isValidTicket(userTicketGet)) {
         throw new BadRequest(`Ticket with id ${id} not valid`);
       }
 
       // update password by PATCH to account-svc PATCH /users/
       options = {
         method: 'PATCH',
-        url: `/users/${userTicket.user_id}`,
+        url: `/users/${userTicketGet.user_id}`,
         headers: {
           authorization: `Bearer ${token}`,
           'cache-control': 'no-cache',
@@ -174,7 +205,8 @@ export default class UserTicketService {
         },
       };
 
-      const ticketResponse = await this.axiosInstance.request(options);
+      const ticketResponse: AxiosResponse<TicketGet> = await this.axiosInstance.request(options);
+      const ticketUpdated: TicketGet = ticketResponse.data;
 
       const message = {
         to: user.email,
@@ -186,7 +218,7 @@ export default class UserTicketService {
       // send reset password confirmation email
       await sgMail.send(message);
 
-      return ticketResponse;
+      return ticketUpdated;
 
     } catch (error) {
       if (error.response && error.response.status === 404) {
