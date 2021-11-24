@@ -4,13 +4,12 @@ export interface TicketCreate {
 }
 
 
-export interface TicketGet extends TicketCreate {
-    id: string;
-    auth0Ticket? : string;
+export interface Auth0Ticket {
+    ticket: string;
 }
 
 
-export interface UserTicketGet {
+export interface TicketGet {
     id: string;
     user_id: string;
     created_at: Date;

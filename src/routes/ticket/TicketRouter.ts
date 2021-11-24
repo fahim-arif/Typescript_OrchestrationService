@@ -26,8 +26,8 @@ export default class TicketRouter {
   private createTicket = async (req: Request, res : Response, next: NextFunction) => {
     try {
       const ticketCreate: TicketCreate = req.body;
-      const ticket = await this.ticketService.createTicket(ticketCreate);
-      res.status(201).json(ticket);
+      await this.ticketService.createTicket(ticketCreate);
+      res.status(201).json();
     } catch (error) {
       next(error);
     }

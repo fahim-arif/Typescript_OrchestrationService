@@ -1,4 +1,4 @@
-import {TicketCreate, TicketGet, ResetPasswordType, TicketWithUserGet, UserTicketGet} from '@models/Ticket';
+import {TicketCreate, TicketGet, ResetPasswordType, TicketWithUserGet} from '@models/Ticket';
 import {logger} from '@middlewares/log/Logger';
 import {InternalError, NotFound, BadRequest} from '@utils/HttpException';
 import {AxiosInstance, AxiosRequestConfig, AxiosResponse} from 'axios';
@@ -42,8 +42,8 @@ export default class MailerService {
       const ticketGet: TicketGet = response.data;
       return ticketGet;
     } catch (error) {
-      logger.error(`Ticket with id ${id} not found.`);
       if (error.response && error.response.status === 404) {
+        logger.error(`Ticket with id ${id} not found.`);
         throw new NotFound(`Ticket with id ${id} not found`);
       } else {
         throw new InternalError(error.message);
@@ -87,41 +87,20 @@ export default class MailerService {
     }
   }
 
-  createForgotPasswordEmail(id: string, email: string): EmailCreate {
-    const resetLink = `${process.env.CLIENT_HOST}/reset-password?ticket=${id}`;
-    const message = {
-      to: email,
-      from: process.env.SENDGRID_EMAIL_FROM || 'support@twomatches.xyz',
-      subject: 'Reset your password for localhost',
-      html: `Please click the link below to reset your password<br /><br /><a href="${resetLink}">Reset Password</a><br /><br />Or copy and paste below link:<br />${resetLink}`,
-    };
-
-    return message;
-  }
 
   async verifyUserTicket(id: string): Promise<TicketWithUserGet> {
     try {
       const token = await auth0Helper.getTokenForApi(this.accountSvcAudience);
 
-      let options: AxiosRequestConfig = {
-        method: 'GET',
-        url: `/user-tickets/${id}`,
-        headers: {
-          authorization: `Bearer ${token}`,
-          'cache-control': 'no-cache',
-        },
-      };
+      const ticketGet: TicketGet = await this.getTicketById(id);
 
-      const response: AxiosResponse<UserTicketGet> = await this.axiosInstance.request(options);
-      const userTicketGet: UserTicketGet = response.data;
-
-      if (!this.isValidTicket(userTicketGet)) {
+      if (!this.isValidTicket(ticketGet)) {
         throw new BadRequest(`Ticket with id ${id} not valid`);
       }
 
-      options = {
+      const options: AxiosRequestConfig = {
         method: 'GET',
-        url: `/users/${userTicketGet.user_id}`,
+        url: `/users/${ticketGet.user_id}`,
         headers: {
           authorization: `Bearer ${token}`,
           'cache-control': 'no-cache',
@@ -132,7 +111,7 @@ export default class MailerService {
       const user: UserGet = userResponse.data;
 
       const ticketWithUser: TicketWithUserGet = {
-        id: userTicketGet.id,
+        id: ticketGet.id,
         user: {
           name: user.name,
           email: user.email,
@@ -141,8 +120,8 @@ export default class MailerService {
 
       return ticketWithUser;
     } catch (error) {
-      if (error.response && error.response.status === 404) {
-        throw new NotFound('No such ticket exists');
+      if (error instanceof NotFound) {
+        throw error;
       } else if (error instanceof BadRequest) {
         throw error;
       } else {
@@ -151,7 +130,7 @@ export default class MailerService {
     }
   }
 
-  async resetPassword(resetPasswordData: ResetPasswordType): Promise<TicketGet> {
+  async resetPassword(resetPasswordData: ResetPasswordType): Promise<AxiosResponse> {
     try {
 
       const token = await auth0Helper.getTokenForApi(this.accountSvcAudience);
@@ -167,17 +146,17 @@ export default class MailerService {
         },
       };
 
-      const response: AxiosResponse<UserTicketGet> = await this.axiosInstance.request(options);
-      const userTicketGet: UserTicketGet = response.data;
+      const response: AxiosResponse<TicketGet> = await this.axiosInstance.request(options);
+      const ticketGet: TicketGet = response.data;
 
-      if (!this.isValidTicket(userTicketGet)) {
+      if (!this.isValidTicket(ticketGet)) {
         throw new BadRequest(`Ticket with id ${id} not valid`);
       }
 
       // update password by PATCH to account-svc PATCH /users/
       options = {
         method: 'PATCH',
-        url: `/users/${userTicketGet.user_id}`,
+        url: `/users/${ticketGet.user_id}`,
         headers: {
           authorization: `Bearer ${token}`,
           'cache-control': 'no-cache',
@@ -206,23 +185,14 @@ export default class MailerService {
       };
 
       const ticketResponse: AxiosResponse<TicketGet> = await this.axiosInstance.request(options);
-      const ticketUpdated: TicketGet = ticketResponse.data;
 
-      const message = {
-        to: user.email,
-        from: process.env.SENDGRID_EMAIL_FROM || 'support@twomatches.xyz',
-        subject: 'Password updated for localhost successfully',
-        html: 'Your password has been changed successfully',
-      };
-
-      // send reset password confirmation email
+      const message = this.createPasswordUpdatedEmail(user.email);
       await sgMail.send(message);
 
-      return ticketUpdated;
-
+      return ticketResponse;
     } catch (error) {
       if (error.response && error.response.status === 404) {
-        throw new NotFound('No such ticket exists');
+        throw new NotFound(`Ticket with id ${resetPasswordData.id} not found`);
       } else if (error.response && error.response.status === 400) {
         throw new BadRequest(error.response.data.detail);
       } else {
@@ -232,7 +202,32 @@ export default class MailerService {
   }
 
 
-  isValidTicket(userTicket: UserTicketGet): boolean {
+  createForgotPasswordEmail(id: string, email: string): EmailCreate {
+    const resetLink = `${process.env.CLIENT_HOST}/reset-password?ticket=${id}`;
+    const message = {
+      to: email,
+      from: process.env.SENDGRID_EMAIL_FROM || 'support@twomatches.xyz',
+      subject: 'Reset your password for localhost',
+      html: `Please click the link below to reset your password<br /><br /><a href="${resetLink}">Reset Password</a><br /><br />Or copy and paste below link:<br />${resetLink}`,
+    };
+
+    return message;
+  }
+
+
+  createPasswordUpdatedEmail(email: string): EmailCreate {
+    const message = {
+      to: email,
+      from: process.env.SENDGRID_EMAIL_FROM || 'support@twomatches.xyz',
+      subject: 'Password updated for localhost successfully',
+      html: 'Your password has been changed successfully',
+    };
+
+    return message;
+  }
+
+
+  isValidTicket(userTicket: TicketGet): boolean {
     if (userTicket.status === 'CLOSED') {
       return false;
     }
