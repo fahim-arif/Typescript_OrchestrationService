@@ -1,4 +1,4 @@
-import {TicketCreate, TicketGet, ResetPasswordType, TicketWithUserGet} from '@models/Ticket';
+import {TicketCreate, TicketGet, ResetPasswordType, TicketWithUserGet, Auth0Ticket} from '@models/Ticket';
 import {logger} from '@middlewares/log/Logger';
 import {InternalError, NotFound, BadRequest} from '@utils/HttpException';
 import {AxiosInstance, AxiosRequestConfig, AxiosResponse} from 'axios';
@@ -51,7 +51,7 @@ export default class MailerService {
     }
   }
 
-  async createTicket(ticketCreate: TicketCreate) : Promise<TicketGet> {
+  async createTicket(ticketCreate: TicketCreate) : Promise<TicketGet | Auth0Ticket> {
     try {
       const token = await auth0Helper.getTokenForApi(this.accountSvcAudience);
 
@@ -67,12 +67,16 @@ export default class MailerService {
         },
       };
 
-      const response: AxiosResponse<TicketGet> = await this.axiosInstance.request(options);
-      const ticketGet: TicketGet = response.data;
+      const response: AxiosResponse<TicketGet | Auth0Ticket> = await this.axiosInstance.request(options);
+      const ticketGet = response.data;
 
-      if (ticketCreate.ticketType === 'CHANGE_PASSWORD') {
+      if (ticketGet.ticket_type === 'CHANGE_PASSWORD') {
         // send reset password link email
-        const message = this.createForgotPasswordEmail(ticketGet.id, ticketCreate.email);
+        const message = this.createForgotPasswordEmail((ticketGet as TicketGet).id, ticketCreate.email);
+        await sgMail.send(message);
+      } else {
+        // send email verification link email
+        const message = this.createVerificationEmail((ticketGet as Auth0Ticket).ticket, ticketCreate.email);
         await sgMail.send(message);
       }
 
@@ -80,7 +84,8 @@ export default class MailerService {
     } catch (error) {
       logger.error('User ticket Creation Failed.');
       if (error.response && error.response.status === 404) {
-        throw new NotFound('No user with this email exists');
+        logger.error(`No user with the email ${ticketCreate.email} exists.`);
+        throw new NotFound(`No user with the email ${ticketCreate.email} exists.`);
       } else {
         throw new InternalError(error.message);
       }
@@ -201,6 +206,16 @@ export default class MailerService {
     }
   }
 
+  createVerificationEmail(ticket: string, email: string): EmailCreate {
+    const message = {
+      to: email,
+      from: process.env.SENDGRID_EMAIL_FROM || 'support@twomatches.xyz',
+      subject: 'Verify your email',
+      html: `You have registered successfully. Please verify your email by clicking the link below<br /><br /><a href="${ticket}">Verify my email</a><br /><br />Or copy and paste below link:<br />${ticket}`,
+    };
+
+    return message;
+  }
 
   createForgotPasswordEmail(id: string, email: string): EmailCreate {
     const resetLink = `${process.env.CLIENT_HOST}/reset-password?ticket=${id}`;
@@ -214,7 +229,6 @@ export default class MailerService {
     return message;
   }
 
-
   createPasswordUpdatedEmail(email: string): EmailCreate {
     const message = {
       to: email,
@@ -225,7 +239,6 @@ export default class MailerService {
 
     return message;
   }
-
 
   isValidTicket(userTicket: TicketGet): boolean {
     if (userTicket.status === 'CLOSED') {

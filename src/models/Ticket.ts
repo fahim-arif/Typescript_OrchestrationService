@@ -6,6 +6,7 @@ export interface TicketCreate {
 
 export interface Auth0Ticket {
     ticket: string;
+    ticket_type: string;
 }
 
 

@@ -36,7 +36,7 @@ logger.info(`NODE_ENV : ${process.env.NODE_ENV}`);
 const app = new App(
   [
     new MailerRouter(new MailerService(new MailerRepository())),
-    new RegisterRouter(new RegisterService()),
+    new RegisterRouter(new RegisterService(), new TicketService()),
     new TicketRouter(new TicketService()),
   ],
     PORT,
