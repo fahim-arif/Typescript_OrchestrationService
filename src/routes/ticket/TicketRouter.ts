@@ -1,10 +1,10 @@
 import express, {NextFunction, Request, Response} from 'express';
+import {validate} from 'express-validation';
 import {checkRateLimit} from '@middlewares/RequestRateHandler';
 import {ticketCreateValidation} from '@models/validations/Ticket';
-import {validate} from 'express-validation';
-import {ResetPasswordType, TicketCreate, TicketWithUserGet} from '@models/Ticket';
-import TicketService from '@services/ticket/TicketService';
+import {ResetPasswordType, TicketCreate} from '@models/Ticket';
 import {resetPasswordValidation} from '@models/validations/ResetPassword';
+import TicketService from '@services/ticket/TicketService';
 
 
 export default class TicketRouter {
@@ -16,8 +16,8 @@ export default class TicketRouter {
   private getTicketById = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const id : string = req.params.id;
-      const ticket = await this.ticketService.getTicketById(id);
-      res.status(200).json(ticket);
+      const ticketWithUserGet = await this.ticketService.getTicketById(id);
+      res.status(200).json(ticketWithUserGet);
     } catch (error) {
       next(error);
     }
@@ -28,16 +28,6 @@ export default class TicketRouter {
       const ticketCreate: TicketCreate = req.body;
       await this.ticketService.createTicket(ticketCreate);
       res.status(201).json();
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  private verifyTicket = async (req: Request, res : Response, next: NextFunction) => {
-    try {
-      const id: string = req.params.ticket;
-      const userWithTicket: TicketWithUserGet = await this.ticketService.verifyUserTicket(id);
-      res.status(200).json(userWithTicket);
     } catch (error) {
       next(error);
     }
@@ -60,10 +50,9 @@ export default class TicketRouter {
 
   initializeRoutes() {
     this.router.use(checkRateLimit());
-    this.router.get('/:id', this.getTicketById);
+    this.router.get('/:id', checkRateLimit({windowSizeMs: 30 * 60 * 1000, maxNumberOfRequests: 5}), this.getTicketById);
     this.router.post('/', checkRateLimit({windowSizeMs: 30 * 60 * 1000, maxNumberOfRequests: 5}), validate(ticketCreateValidation, {}, {}), this.createTicket);
     this.router.post('/reset-password', checkRateLimit({windowSizeMs: 30 * 60 * 1000, maxNumberOfRequests: 5}), validate(resetPasswordValidation, {keyByField: true}, {abortEarly: false}), this.resetPassword);
-    this.router.get('/verify/:ticket', checkRateLimit({windowSizeMs: 30 * 60 * 1000, maxNumberOfRequests: 5}), this.verifyTicket);
   }
 
 }

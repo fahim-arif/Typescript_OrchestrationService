@@ -10,16 +10,3 @@ export interface UserGet extends UserCreate {
   created_at?: Date;
   updated_at?: Date;
 }
-
-export interface Auth0UserCreate {
-  email: string;
-  email_verified: boolean;
-  name: string;
-  connection: string;
-  password: string;
-}
-
-export interface Auth0User extends Auth0UserCreate {
-  user_id: string;
-  [key: string] : unknown;
-}

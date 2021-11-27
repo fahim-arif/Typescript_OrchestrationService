@@ -95,6 +95,9 @@ export function getErrorFromStatus(status: number, description? : string) : Http
     case 428:
       return new PreconditionRequired(description);
 
+    case 429:
+      return new RequestLimitExceeded(description);
+
     case 503:
       return new ServiceUnavailable(description);
 
@@ -103,3 +106,4 @@ export function getErrorFromStatus(status: number, description? : string) : Http
       return new InternalError(description);
   }
 }
+
