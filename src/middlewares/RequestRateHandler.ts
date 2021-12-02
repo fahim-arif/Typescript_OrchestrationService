@@ -6,7 +6,7 @@ export const checkRateLimit = ({windowSizeMs = 60 * 1000, maxNumberOfRequests = 
     windowMs: windowSizeMs,
     max: maxNumberOfRequests,
     handler: () => {
-      throw new RequestLimitExceeded('Maximimum Request Limit Reached');
+      throw new RequestLimitExceeded('Maximimum Request Limit Reached.');
     },
   });
 };

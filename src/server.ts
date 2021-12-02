@@ -6,6 +6,8 @@ import MailerService from '@services/mailer/MailerService';
 import MailerRepository from '@repositories/mailer/MailerRepository';
 import RegisterRouter from '@routes/register/RegisterRouter';
 import RegisterService from '@services/register/RegisterService';
+import TicketRouter from '@routes/ticket/TicketRouter';
+import TicketService from '@services/ticket/TicketService';
 
 
 import App from './app';
@@ -34,7 +36,8 @@ logger.info(`NODE_ENV : ${process.env.NODE_ENV}`);
 const app = new App(
   [
     new MailerRouter(new MailerService(new MailerRepository())),
-    new RegisterRouter(new RegisterService()),
+    new RegisterRouter(new RegisterService(), new TicketService()),
+    new TicketRouter(new TicketService()),
   ],
     PORT,
   );
