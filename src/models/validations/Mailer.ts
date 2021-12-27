@@ -17,6 +17,7 @@ export const mailerValidation = {
       .email()
       .max(320),
     contact_no: Joi.string()
+      .allow('')
       .min(10)
       .max(15)
       .regex(/^\+[0-9]{1,14}$/),
