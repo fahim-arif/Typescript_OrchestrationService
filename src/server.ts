@@ -8,7 +8,8 @@ import RegisterRouter from '@routes/register/RegisterRouter';
 import RegisterService from '@services/register/RegisterService';
 import TicketRouter from '@routes/ticket/TicketRouter';
 import TicketService from '@services/ticket/TicketService';
-
+import ContactUsRouter from '@routes/contact-us/ContactUsRouter';
+import ContactUsService from '@services/contact-us/ContactUsService';
 
 import App from './app';
 
@@ -38,6 +39,7 @@ const app = new App(
     new MailerRouter(new MailerService(new MailerRepository())),
     new RegisterRouter(new RegisterService(), new TicketService()),
     new TicketRouter(new TicketService()),
+    new ContactUsRouter(new ContactUsService()),
   ],
     PORT,
   );

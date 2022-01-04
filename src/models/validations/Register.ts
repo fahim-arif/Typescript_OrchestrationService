@@ -10,7 +10,7 @@ export const registerValidation = {
       .regex(/^[a-zA-Z .'-]+$/),
     company_name: Joi.string()
       .required()
-      .min(1)
+      .min(2)
       .max(255)
       .regex(/^[a-zA-Z0-9 .'-]+$/),
     email: Joi

@@ -5,5 +5,9 @@
   "commonWords": ["company", "companies", "corporation", "corp", "corp.", "inc.", "service", "services"],
   "verificationEmailTemplate": "You have registered successfully. Please verify your email by clicking the link below<br /><br /><a href='{{ticket}}'>Verify my email</a><br /><br />Or copy and paste below link:<br />{{ticket}}",
   "forgotPasswordEmailTemplate": "Please click the link below to reset your password<br /><br /><a href='{{resetLink}}'>Reset Password</a><br /><br />Or copy and paste below link:<br />{{resetLink}}",
-  "passwordUpdatedEmailTemplate": "Your password has been changed successfully. if this was not done by you, please reply back to this email."
+  "passwordUpdatedEmailTemplate": "Your password has been changed successfully. if this was not done by you, please reply back to this email.",
+  "contactUsEmailTemplate": "Name: {{name}} <br /> Email: {{email}} <br /> Originated From: {{identifier}} <br /> <br /> Message: <br /> <pre style='white-space: pre-wrap; word-break: break-word'>{{message}}</pre>",
+  "emailSubject": {
+    "about-page": "About Page - Customer Question"
+  }
 }
