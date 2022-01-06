@@ -4,6 +4,7 @@ import {checkRateLimit} from '@middlewares/RequestRateHandler';
 import {SubscriberCreate, SubscriberGet} from '@models/Mailer';
 import {mailerValidation} from '@models/validations/Mailer';
 import MailerService from '@services/mailer/MailerService';
+import basicAuthHandler from '@middlewares/auth/BasicAuthHandler';
 
 export default class MailerRouter {
   public router = express.Router();
@@ -46,8 +47,8 @@ export default class MailerRouter {
 
   initializeRoutes() {
     this.router.use(checkRateLimit());
-    this.router.get('/', this.getSubscribers);
-    this.router.get('/:id', this.getSubscriberById);
+    this.router.get('/', basicAuthHandler, this.getSubscribers);
+    this.router.get('/:id', basicAuthHandler, this.getSubscriberById);
     this.router.post('/', validate(mailerValidation, {keyByField: true}, {abortEarly: false}), this.createSubscriber);
   }
 
