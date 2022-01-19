@@ -30,3 +30,10 @@ enum SubscriberStatus {
   SUBSCRIBED
   UNSUBSCRIBED
 }
+
+model TokenStore {
+  audience String @id
+  token_data Json
+
+  @@map("token_store")
+}

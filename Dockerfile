@@ -13,10 +13,9 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma
 RUN npm ci --only=production
-RUN npm add -D prisma
 RUN npx prisma generate
 COPY --from=builder /app/dist ./dist
-COPY --chown=node:node .env .
+COPY --chown=node:node .env.sample .env
 
 USER node
 

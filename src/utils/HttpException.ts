@@ -54,6 +54,12 @@ export class PreconditionRequired extends HttpException {
   }
 }
 
+export class RequestLimitExceeded extends HttpException {
+  constructor(description?: string) {
+    super(429, 'Too Many Requests', description);
+  }
+}
+
 export class InternalError extends HttpException {
   constructor(description?: string) {
     super(500, 'Internal Server Error', description);
@@ -89,6 +95,9 @@ export function getErrorFromStatus(status: number, description? : string) : Http
     case 428:
       return new PreconditionRequired(description);
 
+    case 429:
+      return new RequestLimitExceeded(description);
+
     case 503:
       return new ServiceUnavailable(description);
 
@@ -97,3 +106,4 @@ export function getErrorFromStatus(status: number, description? : string) : Http
       return new InternalError(description);
   }
 }
+

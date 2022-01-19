@@ -1,4 +1,4 @@
-import { Joi } from "express-validation";
+import {Joi} from 'express-validation';
 
 export const mailerValidation = {
   body: Joi.object({
@@ -12,8 +12,12 @@ export const mailerValidation = {
       .min(1)
       .max(255)
       .regex(/^[a-zA-Z0-9 .'-]+$/),
-    email: Joi.string().required().email().max(320),
+    email: Joi.string()
+      .required()
+      .email()
+      .max(320),
     contact_no: Joi.string()
+      .allow('')
       .min(10)
       .max(15)
       .regex(/^\+[0-9]{1,14}$/),
